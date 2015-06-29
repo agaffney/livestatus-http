@@ -31,7 +31,7 @@ func process_response(c net.Conn) *Response {
 	var header = make([]byte, 16)
 	c.Read(header)
 	resp.Code, _ = strconv.ParseInt(string(header[0:3]), 10, 16)
-	resp.Length, _ = strconv.ParseInt(strings.TrimSpace(string(header[4:15])), 10, 16)
+	resp.Length, _ = strconv.ParseInt(strings.TrimSpace(string(header[4:15])), 10, 32)
 	io.Copy(&resp.Body, c)
 	return resp
 }

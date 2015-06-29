@@ -1,10 +1,14 @@
 package http
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/agaffney/livestatus-http/livestatus"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -39,6 +43,27 @@ func Start(opts *Options) error {
 
 func handler(w http.ResponseWriter, req *http.Request) {
 	table := strings.TrimPrefix(req.URL.Path, "/")
-	foo, _ := ls_endpoint.Get(table, []string{})
-	w.Write(foo.Body.Bytes())
+	var body bytes.Buffer
+	io.Copy(&body, req.Body)
+	var req_params map[string]interface{}
+	json.Unmarshal(body.Bytes(), &req_params)
+	fmt.Printf("%+v\n", req_params)
+	var headers []string
+	if foo, ok := req_params["headers"]; ok {
+		for _, header := range foo.([]interface{}) {
+			headers = append(headers, header.(string))
+		}
+	}
+	resp, _ := ls_endpoint.Get(table, headers)
+	w.Header().Set("Content-Length", strconv.FormatInt(resp.Length, 10))
+	switch {
+	case resp.Code == 200:
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+	case resp.Code == 404:
+		w.WriteHeader(404)
+	default:
+		w.WriteHeader(400)
+	}
+	w.Write(resp.Body.Bytes())
 }
