@@ -20,6 +20,10 @@ type Options struct {
 	LivestatusAddress string
 }
 
+type RequestBody struct {
+	Headers []string `json:"headers"`
+}
+
 var options *Options
 var ls_endpoint *livestatus.Endpoint
 
@@ -45,16 +49,9 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	table := strings.TrimPrefix(req.URL.Path, "/")
 	var body bytes.Buffer
 	io.Copy(&body, req.Body)
-	var req_params map[string]interface{}
-	json.Unmarshal(body.Bytes(), &req_params)
-	fmt.Printf("%+v\n", req_params)
-	var headers []string
-	if foo, ok := req_params["headers"]; ok {
-		for _, header := range foo.([]interface{}) {
-			headers = append(headers, header.(string))
-		}
-	}
-	resp, _ := ls_endpoint.Get(table, headers)
+	var req_body RequestBody
+	json.Unmarshal(body.Bytes(), &req_body)
+	resp, _ := ls_endpoint.Get(table, req_body.Headers)
 	w.Header().Set("Content-Length", strconv.FormatInt(resp.Length, 10))
 	switch {
 	case resp.Code == 200:
