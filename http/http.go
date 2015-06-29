@@ -39,13 +39,26 @@ func Start(opts *Options) error {
 		return errors.New("You must specify the livestatus endpoint information")
 	}
 
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/command", command_handler)
+	http.HandleFunc("/", query_handler)
 	http.ListenAndServe(fmt.Sprintf("%s:%d", opts.ListenAddr, opts.ListenPort), nil)
 
 	return nil
 }
 
-func handler(w http.ResponseWriter, req *http.Request) {
+func command_handler(w http.ResponseWriter, req *http.Request) {
+	var body bytes.Buffer
+	io.Copy(&body, req.Body)
+	err := ls_endpoint.Command(body.String())
+	if err != nil {
+		w.WriteHeader(400)
+		w.Write([]byte(err.Error()))
+	} else {
+		w.WriteHeader(200)
+	}
+}
+
+func query_handler(w http.ResponseWriter, req *http.Request) {
 	table := strings.TrimPrefix(req.URL.Path, "/")
 	var body bytes.Buffer
 	io.Copy(&body, req.Body)

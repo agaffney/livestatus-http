@@ -36,7 +36,7 @@ func process_response(c net.Conn) *Response {
 	return resp
 }
 
-func (e *Endpoint) Send_request(req string) (*Response, error) {
+func (e *Endpoint) Send_request(req string, expect_response bool) (*Response, error) {
 	var socktype string
 	switch {
 	case e.Type == TYPE_UNIX:
@@ -54,18 +54,21 @@ func (e *Endpoint) Send_request(req string) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp := process_response(c)
-	return resp, nil
+	if expect_response {
+		resp := process_response(c)
+		return resp, nil
+	}
+	return nil, nil
 }
 
 func (e *Endpoint) Get(table string, headers []string) (*Response, error) {
 	req := fmt.Sprintf("GET %s\nResponseHeader: fixed16\nOutputFormat: json\n%s\n\n", table, strings.Join(headers, "\n"))
-	resp, err := e.Send_request(req)
+	resp, err := e.Send_request(req, true)
 	return resp, err
 }
 
 func (e *Endpoint) Command(cmd string) error {
 	req := fmt.Sprintf("COMMAND [%d] %s\nResponseHeader: fixed16\n\n", time.Now().Unix(), cmd)
-	_, err := e.Send_request(req)
+	_, err := e.Send_request(req, false)
 	return err
 }
