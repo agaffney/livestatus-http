@@ -3,6 +3,8 @@ package livestatus
 import (
 	"fmt"
 	"net"
+	"strings"
+	"time"
 )
 
 const (
@@ -39,4 +41,14 @@ func (e *Endpoint) Send_request(req string) (string, error) {
 	c.Close()
 	fmt.Printf("Response:\n%s\n", buf)
 	return string(buf), nil
+}
+
+func (e *Endpoint) Get(table string, headers []string) {
+	req := fmt.Sprintf("GET %s\nOutputFormat: json\n%s\n\n", table, strings.Join(headers, "\n"))
+	e.Send_request(req)
+}
+
+func (e *Endpoint) Command(cmd string) {
+	req := fmt.Sprintf("COMMAND [%d] %s\n\n", time.Now().Unix(), cmd)
+	e.Send_request(req)
 }
