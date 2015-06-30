@@ -41,7 +41,12 @@ func Start(opts *Options) error {
 
 	http.HandleFunc("/command", command_handler)
 	http.HandleFunc("/", query_handler)
-	http.ListenAndServe(fmt.Sprintf("%s:%d", opts.ListenAddr, opts.ListenPort), nil)
+
+	if opts.Xinetd {
+		return errors.New("Xinetd mode is not currently supported")
+	} else {
+		http.ListenAndServe(fmt.Sprintf("%s:%d", opts.ListenAddr, opts.ListenPort), nil)
+	}
 
 	return nil
 }
